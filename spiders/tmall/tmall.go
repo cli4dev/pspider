@@ -1,14 +1,17 @@
 package tmall
 
 import (
-	"fmt"
 	"pspider/spiders"
+	"time"
+
+	"github.com/micro-plat/lib4go/logger"
 )
 
 //TmSpider 天猫商品爬虫
 type TmSpider struct {
 	kw         string
 	isStart    bool
+	log        logger.ILogger
 	notifyChan chan *spiders.Product
 	callback   func(*spiders.Product)
 }
@@ -22,6 +25,7 @@ func NewTmSpider(kw string, callback func(*spiders.Product)) *TmSpider {
 		kw:         kw,
 		notifyChan: make(chan *spiders.Product),
 		callback:   callback,
+		log:        logger.New("tmspider"),
 	}
 	go tm.notify()
 	return tm
@@ -44,17 +48,18 @@ func (t *TmSpider) Start() error {
 		return nil
 	}
 	t.isStart = true
+	start := time.Now()
+	t.log.Info("-----------开始抓取天猫商品数据-----------")
+	t.log.Infof("1. 查询商品列表[%s %d]", t.kw, 100)
 	list, err := getProductList(t.kw, 100)
 	if err != nil {
 		return err
 	}
-	for _, url := range list[0:1] {
-		p, err := getProductDetail("https:" + url)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		fmt.Printf("%+v\n", p)
+	t.log.Infof("2. 查询到%d个商品，开始抓取商品明细", len(list))
+	ps, err := getProducts(list...)
+	if err != nil {
+		return err
 	}
+	t.log.Infof("3. 抓取完成,总共获取到%d个商品 %v", len(ps), time.Since(start))
 	return nil
 }

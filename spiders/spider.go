@@ -1,16 +1,16 @@
 package spiders
 
 type Product struct {
-	Title         string
-	Payment       string
-	ShopName      string
-	OriginalPrice string
-	SalesPrice    string
-	Area          string
-	PostFee       string
-	MonthlySales  string
-	Appraise      string
-	Score         string
+	URL          string
+	Title        string
+	ShopName     string
+	ShopURL      string
+	SalesPrice   string
+	Area         string
+	MonthlySales string
+	Appraise     string
+	Score        string
+	Points       string
 }
 
 type ISpider interface {
