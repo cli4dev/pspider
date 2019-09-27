@@ -11,6 +11,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/chromedp/chromedp"
+	"github.com/micro-plat/lib4go/logger"
 	"github.com/micro-plat/lib4go/types"
 )
 
@@ -49,7 +50,7 @@ func getProductList(kw string, count int, orderBy ...string) ([]string, error) {
 	return list, nil
 }
 
-func getProducts(urls ...string) ([]*spiders.Product, error) {
+func getProducts(log logger.ILogger, urls ...string) ([]*spiders.Product, error) {
 	ps := make([]*spiders.Product, 0, len(urls))
 	var group sync.WaitGroup
 	ch := make(chan string, len(urls))
@@ -69,13 +70,12 @@ func getProducts(urls ...string) ([]*spiders.Product, error) {
 				p, err := getProductDetail(url)
 				if err != nil {
 					count++
-					fmt.Println("count:", count, time.Now(), err)
 					group.Done()
-					fmt.Println(err)
+					log.Error(err)
 					continue
 				}
 				count++
-				fmt.Println("count:", count, time.Now())
+				log.Info("完成:", count, url)
 				ps = append(ps, p)
 				group.Done()
 			}

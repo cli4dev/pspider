@@ -56,7 +56,7 @@ func (t *TmSpider) Start() error {
 		return err
 	}
 	t.log.Infof("2. 查询到%d个商品，开始抓取商品明细", len(list))
-	ps, err := getProducts(list...)
+	ps, err := getProducts(t.log, list...)
 	if err != nil {
 		return err
 	}
