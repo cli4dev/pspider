@@ -7,59 +7,31 @@ import (
 	"github.com/micro-plat/lib4go/logger"
 )
 
-//TmSpider 天猫商品爬虫
-type TmSpider struct {
-	kw         string
-	isStart    bool
-	log        logger.ILogger
-	notifyChan chan *spiders.Product
-	callback   func(*spiders.Product)
+type tmall struct {
+	urls   chan *spiders.Product
+	log    logger.ILogger
+	notify chan *spiders.Product
 }
 
-//NewTmSpider 天猫商品查询
-func NewTmSpider(kw string, callback func(*spiders.Product)) *TmSpider {
-	if callback == nil {
-		panic("tmspider.callback不能为空")
-	}
-	tm := &TmSpider{
-		kw:         kw,
-		notifyChan: make(chan *spiders.Product),
-		callback:   callback,
-		log:        logger.New("tmspider"),
-	}
-	go tm.notify()
-	return tm
-}
-func (t *TmSpider) notify() {
-	for {
-		select {
-		case p, ok := <-t.notifyChan:
-			if !ok {
-				return
-			}
-			t.callback(p)
-		}
+func newTmall() *tmall {
+	return &tmall{
+		log:  logger.New("tmall"),
+		urls: make(chan *spiders.Product, 10000),
 	}
 }
 
-//Start 搜索商品信息
-func (t *TmSpider) Start() error {
-	if t.isStart {
-		return nil
-	}
-	t.isStart = true
+func (t *tmall) Query(kw string, notify chan *spiders.Product) error {
+	t.notify = notify
 	start := time.Now()
-	t.log.Info("-----------开始抓取天猫商品数据-----------")
-	t.log.Infof("1. 查询商品列表[%s %d]", t.kw, 100)
-	list, err := getProductList(t.kw, 100)
-	if err != nil {
-		return err
-	}
-	t.log.Infof("2. 查询到%d个商品，开始抓取商品明细", len(list))
-	ps, err := getProducts(t.log, list...)
-	if err != nil {
-		return err
-	}
-	t.log.Infof("3. 抓取完成,总共获取到%d个商品 %v", len(ps), time.Since(start))
-	return nil
+
+	t.log.Infof("1. 从天猫抓取商品信息[%s]", kw)
+	go t.getURLs(kw)
+	err := t.getProds()
+
+	t.log.Info("2. 天猫商品抓取完成", time.Since(start))
+	return err
+}
+
+func init() {
+	spiders.Register("tmall", newTmall())
 }
